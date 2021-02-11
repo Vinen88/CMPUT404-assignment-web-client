@@ -93,9 +93,40 @@ class HTTPClient(object):
         self.close()
         return HTTPResponse(code, body)
 
+
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        url_bits = urlparse(url)
+        if url_bits.port == None:
+            port = 80
+        else:
+            port = url_bits.port
+        if args != None:
+            print(args)
+            content = args #this needs to be formatted
+            length = len(content)
+            self.sendall(content)
+        else:    
+            length = 0
+        self.connect(url_bits.hostname, port)
+        #self.send_post(url_bits.path, url_bits.netloc) #might use this? we will see
+        self.sendall('POST %s HTTP/1.1\r\n'%url_bits.path)
+        self.sendall('Host: %s\r\n'%url_bits.netloc)
+        self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
+        self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
+        self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
+        self.sendall('Accept-Encoding: gzip, deflate, br\r\n')
+        self.sendall('Content-Type: application/x-www-form-urlencoded\r\n')
+        self.sendall('Content-Length: %s\r\n'%length) #hmmmm
+        self.sendall('Connection: Close\r\n')
+        self.sendall('Upgrade-Insecure-Requests: 1\r\n')
+        #self.sendall('DNT: 1\r\n') #what does this even do?
+        self.sendall('\r\n')
+        if args != None:
+            self.sendall(content)
+        response = self.recvall(self.socket)
+        code = self.get_code(response)
+        body = self.get_body(response)
+        self.close()
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
