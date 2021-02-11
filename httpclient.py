@@ -67,6 +67,8 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
     def send_get(self, path, netloc):
+        if path == '':
+            path = '/'
         self.sendall('GET %s HTTP/1.1\r\n'%path)
         self.sendall('Host: %s\r\n'%netloc)
         self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
@@ -89,28 +91,20 @@ class HTTPClient(object):
         response = self.recvall(self.socket)
         code = self.get_code(response)
         body = self.get_body(response)
-        print(code,'\n'+body)
+        print(response)
+        #print(code,'\n'+body)
         self.close()
         return HTTPResponse(code, body)
 
+    def format_content(self, content):
+        formated = ''
+        for key in content.keys():
+            formated = formated+key+'='+content[key]+'&'
+        return formated[:-1]
 
-    def POST(self, url, args=None):
-        url_bits = urlparse(url)
-        if url_bits.port == None:
-            port = 80
-        else:
-            port = url_bits.port
-        if args != None:
-            print(args)
-            content = args #this needs to be formatted
-            length = len(content)
-            self.sendall(content)
-        else:    
-            length = 0
-        self.connect(url_bits.hostname, port)
-        #self.send_post(url_bits.path, url_bits.netloc) #might use this? we will see
-        self.sendall('POST %s HTTP/1.1\r\n'%url_bits.path)
-        self.sendall('Host: %s\r\n'%url_bits.netloc)
+    def send_post_header(self, path, netloc, length): #is netloc best option here?
+        self.sendall('POST %s HTTP/1.1\r\n'%path)
+        self.sendall('Host: %s\r\n'%netloc)
         self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
         self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
         self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
@@ -121,6 +115,21 @@ class HTTPClient(object):
         self.sendall('Upgrade-Insecure-Requests: 1\r\n')
         #self.sendall('DNT: 1\r\n') #what does this even do?
         self.sendall('\r\n')
+
+    def POST(self, url, args=None):
+        url_bits = urlparse(url)
+        if url_bits.port == None:
+            port = 80
+        else:
+            port = url_bits.port
+        if args != None:
+            print(args)
+            content = self.format_content(args) #this needs to be formatted
+            length = len(content)
+        else:    
+            length = 0
+        self.connect(url_bits.hostname, port)
+        self.send_post_header(url_bits.path, url_bits.netloc, length)
         if args != None:
             self.sendall(content)
         response = self.recvall(self.socket)
