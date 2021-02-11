@@ -22,7 +22,7 @@ import sys
 import socket
 import re
 # you may use urllib to encode data appropriately
-import urllib.parse
+from urllib.parse import urlparse
 
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
@@ -41,13 +41,13 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        return None
+        return int(data.split('\n')[0].split()[1])
 
     def get_headers(self,data):
-        return None
+        return data.split('\n\r\n')[0]
 
     def get_body(self, data):
-        return None
+        return data.split('\n\r\n')[1]
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
@@ -68,8 +68,32 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        url_bits = urlparse(url)
+        print(url_bits)
+        print(url_bits.hostname)
+        if url_bits.port == None:
+            port = 80
+        else:
+            port = url_bits.port
+        self.connect(url_bits.hostname, port) #dunno?
+        self.sendall('GET %s HTTP/1.1\r\n'%url_bits.path)
+        self.sendall('Host: %s\r\n'%url_bits.netloc)
+        self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
+        self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
+        self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
+        self.sendall('Accept-Encoding: gzip, deflate, br\r\n')
+        self.sendall('Connection: Close\r\n')
+        self.sendall('Upgrade-Insecure-Requests: 1\r\n')
+        #self.sendall('DNT: 1\r\n')
+        #might add stuff here?
+        self.sendall('\r\n')
+        response = self.recvall(self.socket)
+        code = self.get_code(response)
+        print(code)
+        body = self.get_body(response)
+        print(body)
+        print(response)
+        self.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
