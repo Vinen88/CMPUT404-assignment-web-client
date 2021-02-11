@@ -66,33 +66,30 @@ class HTTPClient(object):
             else:
                 done = not part
         return buffer.decode('utf-8')
-
-    def GET(self, url, args=None):
-        url_bits = urlparse(url)
-        print(url_bits)
-        print(url_bits.hostname)
-        if url_bits.port == None:
-            port = 80
-        else:
-            port = url_bits.port
-        self.connect(url_bits.hostname, port) #dunno?
-        self.sendall('GET %s HTTP/1.1\r\n'%url_bits.path)
-        self.sendall('Host: %s\r\n'%url_bits.netloc)
+    def send_get(self, path, netloc):
+        self.sendall('GET %s HTTP/1.1\r\n'%path)
+        self.sendall('Host: %s\r\n'%netloc)
         self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
         self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
         self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
         self.sendall('Accept-Encoding: gzip, deflate, br\r\n')
         self.sendall('Connection: Close\r\n')
         self.sendall('Upgrade-Insecure-Requests: 1\r\n')
-        #self.sendall('DNT: 1\r\n')
-        #might add stuff here?
-        self.sendall('\r\n')
+        #self.sendall('DNT: 1\r\n') #what does this even do?
+        self.sendall('\r\n') #this is important =D
+
+    def GET(self, url, args=None):
+        url_bits = urlparse(url)
+        if url_bits.port == None:
+            port = 80
+        else:
+            port = url_bits.port
+        self.connect(url_bits.hostname, port) #dunno?
+        self.send_get(url_bits.path, url_bits.netloc)
         response = self.recvall(self.socket)
         code = self.get_code(response)
-        print(code)
         body = self.get_body(response)
-        print(body)
-        print(response)
+        print(code,'\n'+body)
         self.close()
         return HTTPResponse(code, body)
 
