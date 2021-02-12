@@ -65,22 +65,23 @@ class HTTPClient(object):
                 buffer.extend(part)
             else:
                 done = not part
-        return buffer.decode('utf-8')
+        #return buffer.decode('utf-8')
+        return buffer.decode(encoding='latin_1')
+   
     def send_get(self, path, netloc):
         if path == '':
             path = '/'
         self.sendall('GET %s HTTP/1.1\r\n'%path)
         self.sendall('Host: %s\r\n'%netloc)
-        self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
-        self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
-        self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
-        self.sendall('Accept-Encoding: gzip, deflate, br\r\n')
-        self.sendall('Connection: Close\r\n')
+        self.sendall('User-Agent: curl/7.58.0\r\n')
+        self.sendall('Accept: */*\r\n')
+        self.sendall('Connection: close\r\n')
+        self.sendall('Accept-Charset: UTF-8\r\n')
         self.sendall('Upgrade-Insecure-Requests: 1\r\n')
-        #self.sendall('DNT: 1\r\n') #what does this even do?
+        self.sendall('DNT: 1\r\n') #what does this even do?
         self.sendall('\r\n') #this is important =D
 
-    def GET(self, url, args=None):
+    def GET(self, url, args=None): # args should always be none. can send get body but servers should not awknowledge as per HTTP spec
         url_bits = urlparse(url)
         if url_bits.port == None:
             port = 80
@@ -105,15 +106,13 @@ class HTTPClient(object):
     def send_post_header(self, path, netloc, length): #is netloc best option here?
         self.sendall('POST %s HTTP/1.1\r\n'%path)
         self.sendall('Host: %s\r\n'%netloc)
-        self.sendall('User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0\r\n')
-        self.sendall('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
-        self.sendall('Accept-Language: en-US,en;q=0.5\r\n')
-        self.sendall('Accept-Encoding: gzip, deflate, br\r\n')
+        self.sendall('User-Agent: curl/7.58.0\r\n')
+        self.sendall('Accept: */*\r\n')
         self.sendall('Content-Type: application/x-www-form-urlencoded\r\n')
         self.sendall('Content-Length: %s\r\n'%length) #hmmmm
         self.sendall('Connection: Close\r\n')
         self.sendall('Upgrade-Insecure-Requests: 1\r\n')
-        #self.sendall('DNT: 1\r\n') #what does this even do?
+        self.sendall('DNT: 1\r\n') #what does this even do?
         self.sendall('\r\n')
 
     def POST(self, url, args=None):
